@@ -23,7 +23,6 @@ import java.util.concurrent.Executors;
  * home Wi-Fi gets nothing; Tailscale's WireGuard tunnel carries it encrypted. Every change needs the PIN.
  */
 final class WebServer {
-    static final int PORT = 8765;
     private static final int MAX_BODY = 4096;
 
     private final Context context;
@@ -46,20 +45,25 @@ final class WebServer {
         running = true;
         Thread t = new Thread(() -> {
             while (running) {
-                try (ServerSocket s = new ServerSocket(PORT)) {
+                try (ServerSocket s = new ServerSocket(state.port())) {
                     socket = s;
                     while (running) {
                         Socket c = s.accept();
                         pool.execute(() -> handle(c));
                     }
                 } catch (Exception e) {
-                    // port busy right after a restart of the service: try again shortly
+                    // port busy right after a restart of the service, or rebind(): open again shortly
                     try { Thread.sleep(3000); } catch (InterruptedException ignored) { return; }
                 }
             }
         }, "parentlock-web");
         t.setDaemon(true);
         t.start();
+    }
+
+    /** Close the socket; the loop opens it again on the port now stored. */
+    void rebind() {
+        try { if (socket != null) socket.close(); } catch (Exception ignored) { }
     }
 
     void stop() {

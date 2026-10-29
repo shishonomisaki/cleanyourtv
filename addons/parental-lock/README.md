@@ -38,11 +38,18 @@ phone is set to Chinese.
 JDK 17 and Android SDK 34, as for the launcher, and the `tools/venv` from the main README. Android 8.0 or later.
 
 ```bash
-TV_HOST=<tv ip> addons/parental-lock/install.sh
+TV_HOST=<tv ip> SET_PORT=<your port> addons/parental-lock/install.sh
 ```
 
-The TV locks as soon as the script ends. Open the address the script prints (the TV's Tailscale address, port
-8765) on the phone, choose the PIN, then unlock. The app's tile on the TV shows the address again.
+The TV locks as soon as the script ends. Open the address the script prints (the TV's Tailscale address and
+the port) on the phone, choose the PIN, then unlock. The app's tile on the TV shows the address again.
+
+### Choose your own port
+
+Pick a port of your own between 1024 and 65535 and pass it as `SET_PORT`. Don't copy a number from this README,
+an issue or someone's screenshot: a port everyone uses is the first one a scanner tries. Without `SET_PORT` the
+app picks a random port between 20000 and 59999 on its first start and keeps it. Keep the number out of public
+issues and screenshots. Changing it later moves the page for every phone, so update the bookmarks.
 
 ## Over adb
 
@@ -57,6 +64,8 @@ tools/tv.py "am broadcast -n $R -a SET_VOLUME --es output tv --ei volume 13"   #
 tools/tv.py "am broadcast -n $R -a SET_VOLUME --es output bt --ei volume 50"   # a Bluetooth speaker
 tools/tv.py "am broadcast -n $R -a SET_VOLUME --es output tv --es app com.netflix.ninja --ei volume 16"
 tools/tv.py "am broadcast -n $R -a RESET_VOLUMES"                # forget the levels learned per app
+tools/tv.py "am broadcast -n $R -a PORT"                         # the phone page's port (data="...")
+tools/tv.py "am broadcast -n $R -a SET_PORT --ei port <port>"    # move the page to a port you chose
 ```
 
 To take it off: `tools/tv.py "settings put secure enabled_accessibility_services ''"` (or remove just this
@@ -68,7 +77,7 @@ service from the list), then `pm uninstall io.github.shishonomisaki.parentlock`.
 |---|---|
 | **Accessibility service** (`GuardService`), switched on by the install script | To see which app is on screen (package name only: it cannot retrieve window content), to eat the remote's keys while locked (`flagRequestFilterKeyEvents`), and to press Home when Settings closes. |
 | **Display over other apps** (`SYSTEM_ALERT_WINDOW`), granted with `appops` | To bring the lock screen back from the background on Android 10 and later, and for the countdown pill on Home. |
-| `INTERNET` | The phone page: a small HTTP server on port 8765 that answers Tailscale addresses (100.64.0.0/10) only and drops everything else, so a device on the home Wi-Fi gets nothing. Tailscale's WireGuard tunnel carries it encrypted. Nothing is sent anywhere. |
+| `INTERNET` | The phone page: a small HTTP server on a port you choose that answers Tailscale addresses (100.64.0.0/10) only and drops everything else, so a device on the home Wi-Fi gets nothing. Tailscale's WireGuard tunnel carries it encrypted. Nothing is sent anywhere. |
 | **Package visibility** (`<queries>`) | The apps that declare Home (the countdown shows there), launcher and leanback apps (to name the app on screen), and the Live TV app. |
 
 `AdminReceiver` is exported only to callers holding `WRITE_SECURE_SETTINGS`, which the adb shell has and ordinary

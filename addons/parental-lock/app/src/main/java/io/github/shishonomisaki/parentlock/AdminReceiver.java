@@ -15,6 +15,8 @@ import android.content.Intent;
  *       starting level on the TV's speakers (output bt: a Bluetooth speaker); add --es app <package> for one
  *       app; --ei volume -1 removes it. Unset levels leave the volume alone.
  *   am broadcast -n io.github.shishonomisaki.parentlock/.AdminReceiver -a RESET_VOLUMES   (forget every app's level)
+ *   am broadcast -n io.github.shishonomisaki.parentlock/.AdminReceiver -a PORT            (prints the phone page's port)
+ *   am broadcast -n io.github.shishonomisaki.parentlock/.AdminReceiver -a SET_PORT --ei port <1024-65535>
  */
 public class AdminReceiver extends BroadcastReceiver {
     @Override
@@ -37,6 +39,15 @@ public class AdminReceiver extends BroadcastReceiver {
             }
         } else if ("RESET_VOLUMES".equals(action)) {
             state.resetVolumes();
+        } else if ("SET_PORT".equals(action)) {
+            int port = intent.getIntExtra("port", 0);
+            if (port >= 1024 && port <= 65535) {
+                state.setPort(port);
+                GuardService.rebindWeb();
+            }
+            setResultData(String.valueOf(state.port()));
+        } else if ("PORT".equals(action)) {
+            setResultData(String.valueOf(state.port()));
         } else if ("LOCK".equals(action)) {
             state.lock();
             GuardService.refresh();

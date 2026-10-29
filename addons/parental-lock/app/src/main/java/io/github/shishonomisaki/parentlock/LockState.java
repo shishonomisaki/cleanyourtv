@@ -26,6 +26,23 @@ final class LockState {
         this.prefs = this.context.getSharedPreferences("state", Context.MODE_PRIVATE);
     }
 
+    // The phone page's port: picked at random on first start, so no two TVs share one; SET_PORT changes it.
+    static final int PORT_MIN = 20000;
+    static final int PORT_MAX = 59999;
+
+    synchronized int port() {
+        int p = prefs.getInt("port", 0);
+        if (p == 0) {
+            p = PORT_MIN + new SecureRandom().nextInt(PORT_MAX - PORT_MIN + 1);
+            prefs.edit().putInt("port", p).apply();
+        }
+        return p;
+    }
+
+    synchronized void setPort(int port) {
+        prefs.edit().putInt("port", port).apply();
+    }
+
     private int bootCount() {
         return Settings.Global.getInt(context.getContentResolver(), Settings.Global.BOOT_COUNT, -1);
     }

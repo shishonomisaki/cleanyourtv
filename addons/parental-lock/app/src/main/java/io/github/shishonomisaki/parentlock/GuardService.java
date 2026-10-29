@@ -94,6 +94,12 @@ public class GuardService extends AccessibilityService {
         if (s != null) s.handler.post(() -> s.enforce(null));
     }
 
+    /** The phone page moves to the port now stored (AdminReceiver SET_PORT). */
+    static void rebindWeb() {
+        GuardService s = instance;
+        if (s != null && s.server != null) s.server.rebind();
+    }
+
     @Override
     protected void onServiceConnected() {
         instance = this;

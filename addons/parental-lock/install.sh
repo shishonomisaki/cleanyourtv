@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build Parental Lock, install it on the TV and switch it on. The TV locks as soon as this ends.
-#   TV_HOST=<tv ip> addons/parental-lock/install.sh
+#   TV_HOST=<tv ip> [SET_PORT=<your port>] addons/parental-lock/install.sh
 set -euo pipefail
 : "${TV_HOST:?set TV_HOST to the TV IP address}"
 cd "$(dirname "$0")"
@@ -29,9 +29,13 @@ tv "pm path com.tailscale.ipn >/dev/null 2>&1 && settings put secure always_on_v
 # Android may store it as $PKG/.GuardService or in full, so match either.
 tv "s=\$(settings get secure enabled_accessibility_services); case \"\$s\" in *$PKG/*GuardService*) ;; null|'') s=$SVC ;; *) s=\$s:$SVC ;; esac; settings put secure enabled_accessibility_services \"\$s\"; settings put secure accessibility_enabled 1; echo guard on"
 sleep 3
+# SET_PORT=<1024-65535> picks the phone page's port; otherwise the app keeps the one it chose at random.
+R=$PKG/.AdminReceiver
+if [ -n "${SET_PORT:-}" ]; then tv "am broadcast -n $R -a SET_PORT --ei port $SET_PORT" >/dev/null; fi
+PORT=$(tv "am broadcast -n $R -a PORT" | grep -o 'data="[0-9]*"' | tr -dc '0-9')
 ADDR=$(tv "ip -4 addr show 2>/dev/null | grep -o 'inet 100\\.[0-9.]*' | head -n1 | cut -d' ' -f2" | tr -d '\r')
 if [ -n "$ADDR" ]; then
-    echo "Installed and locked. On the phone (with Tailscale on), open http://$ADDR:8765 and choose the PIN."
+    echo "Installed and locked. On the phone (with Tailscale on), open http://$ADDR:$PORT and choose the PIN."
 else
-    echo "Installed and locked. Connect Tailscale on the TV, then open http://<its 100.x address>:8765 on the phone."
+    echo "Installed and locked. Connect Tailscale on the TV, then open http://<its 100.x address>:$PORT on the phone."
 fi

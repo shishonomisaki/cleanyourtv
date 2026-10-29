@@ -35,7 +35,7 @@ public class InfoActivity extends Activity {
         body.setPadding(0, 32, 0, 0);
         body.setText(address == null
                 ? getString(R.string.info_no_tailscale)
-                : getString(R.string.info_open, "http://" + address + ":" + WebServer.PORT));
+                : getString(R.string.info_open, "http://" + address + ":" + new LockState(this).port()));
 
         root.addView(title);
         root.addView(body);
